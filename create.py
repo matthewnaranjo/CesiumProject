@@ -6,25 +6,32 @@ import datetime
 parser = argparse.ArgumentParser(description='Date:')
 parser.add_argument('-d', type=str, help='day of year')
 parser.add_argument('-y', type=str, help='year')
+parser.add_argument('-v', type=str, help='version')
 args = parser.parse_args()
 
 year = args.y
 num = args.d
+version = args.v
 
-if args.d==None:
+if args.d == None:
 	print('No date inputted.')
 	print('Please enter date in the format: -d YYYY-MM-DD')
 
+if args.v == None:
+	version = 'v01r000'
+else:
+	version = 'v%sr%s' % (version[:1].zfill(2), version[1:])
+
 #loading in the NC
+path = "/disks/icondata/Repository/Archive/LEVEL.0.PRIME/GROUND/EPHEMERIS.PREDICTIVE/"
 try:
-	iconData = Dataset("2017/ICON_L0P_Ephemeris_Predictive_2017-" + num + "_v01r000.NC")
+	iconData = Dataset("%s/%s/ICON_L0P_Ephemeris_Predictive_%s-%s_%s.NC" % (path, year, year, num, version))
 except:
 	raise Exception('No file matching day and year.')
 
 lat = iconData.variables['LONGITUDE']
 lon = iconData.variables['LATITUDE']
 alt = iconData.variables['HEIGHT']
-year = iconData.variables['YEAR']
 doy = iconData.variables['DOY']
 hour = iconData.variables['HOUR']
 mins = iconData.variables['MINS']
@@ -34,7 +41,7 @@ coords = []
 position = (str(lat[0]) + ', ' + str(lon[0])+ ', ' + str(float(alt[0]) * 1000))
 
 #datetime to get date from year and day number
-date = datetime.datetime.strptime(str(year[0]) + str(doy[0]),'%Y%j').strftime('%Y-%m-%d')
+date = datetime.datetime.strptime(str(year) + str(doy[0]),'%Y%j').strftime('%Y-%m-%d')
 datetimes = date + 'T' + str(datetime.time(hour[0], mins[0], sec[0])) + '+00:00'
 value = ' ["' + datetimes + '", ' +  position
 coords.append(value)
@@ -50,17 +57,18 @@ for i in range(len(lat)):
 
 iconData.close()
 
-formatting = """[{"version": "1.0", "id": "document"}, {"label": {"text": "ICON", "pixelOffset": {"cartesian2": [0.0, 16.0]}, "scale": 0.5, "show": true}, "path": {"show": true, "material": {"solidColor": {"color": {"rgba": [255, 0, 255, 125]}}}, "width": 2, "trailTime": 0, "resolution": 120, "leadTime": 0, "trailTime": 10000}, "model": {"gltf" : "../../SampleData/models/CesiumAir/Cesium_Air.glb", "scale" : 2.0, "minimumPixelSize": 64, "show": true}, "position": {"interpolationDegree": 5, "referenceFrame": "INTERTIAL", "cartographicDegrees":"""
+formatting = """[{"version": "1.0", "id": "document"}, {"label": {"text": "ICON", "pixelOffset": {"cartesian2": [0.0, 16.0]}, "scale": 0.5, "show": true}, "path": {"show": true, "material": {"solidColor": {"color": {"rgba": [255, 0, 255, 125]}}}, "width": 2, "trailTime": 0, "resolution": 120, "leadTime": 0, "trailTime": 10000},  "billboard": {"image" : "../../SampleData/models/CesiumAir/ICON-2016-comp_fine.png", "scale": 30.0, "sizeInMeters": true, "show": true}, "position": {"interpolationDegree": 5, "referenceFrame": "INTERTIAL", "cartographicDegrees":"""
 end_format = '''], "interpolationAlgorithm": "LAGRANGE"}, "id": "ICON"}]'''
 
 
 #writing to file
-f = open('./czml/' + date +'.czml', 'w')
+name = '%s-%s_%s' % (year, num, version)
+f = open('../Documents/Cesium/Apps/ICONData/czml/' + name +'.czml', 'w')
 f.write(formatting)
 for i in range(len(coords)):
 	f.write(coords[i][0:-1])
 f.write(end_format)
-print('Data saved in ' + date + '.czml')
+print('Data saved in ' + name + '.czml')
 f.close()
 
 
