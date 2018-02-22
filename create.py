@@ -36,29 +36,45 @@ doy = iconData.variables['DOY']
 hour = iconData.variables['HOUR']
 mins = iconData.variables['MINS']
 sec = iconData.variables['SEC']
+q0 = iconData.variables['Q0_ECI']
+q1 = iconData.variables['Q1_ECI']
+q2 = iconData.variables['Q2_ECI']
+q3 = iconData.variables['Q3_ECI']
 
 coords = []
+orient = []
 position = (str(lat[0]) + ', ' + str(lon[0])+ ', ' + str(float(alt[0]) * 1000))
+q = (str(q0[0]) + ', ' + str(q1[0]) + ', ' + str(q2[0]) + ', ' + str(q3[0]))
 
 #datetime to get date from year and day number
 date = datetime.datetime.strptime(str(year) + str(doy[0]),'%Y%j').strftime('%Y-%m-%d')
 datetimes = date + 'T' + str(datetime.time(hour[0], mins[0], sec[0])) + '+00:00'
-value = ' ["' + datetimes + '", ' +  position
-coords.append(value)
+pos_value = ' ["' + datetimes + '", ' +  position
+orient_value = ' ["' + datetimes + '", ' +  q
+coords.append(pos_value)
+orient.append(orient_value)
 
 print('Creating czml')
-for i in range(len(lat)):
+for i in range(1, len(lat)):
 	if str(lat[i]) != '--' and str(lon[i]) != '--' and str(alt[i]) != '--':
 		position = (str(lat[i]) + ', ' + str(lon[i])+ ', ' + str(float(alt[i]) * 1000))
-	if i != 0 and str(hour[i]) != '--' and str(mins[i]) != '--' and str(sec[i]) != '--':
+
+	if str(q0[i]) != '--' and str(q1[i]) != '--' and str(q2[i]) != '--' and str(q3[i]) != '--':
+		q = (str(q0[i]) + ', ' + str(q1[i]) + ', ' + str(q2[i]) + ', ' + str(q3[i]))
+
+	if str(hour[i]) != '--' and str(mins[i]) != '--' and str(sec[i]) != '--':
 		datetimes = date + 'T' + str(datetime.time(hour[i], mins[i], sec[i])) + '+00:00'
 		value = ', "' + datetimes + '", ' +  position
+		quat = ', "' + datetimes + '", ' +  q
+		orient.append(quat)
 		coords.append(value)
+
 
 iconData.close()
 
-formatting = """[{"version": "1.0", "id": "document"}, {"label": {"text": "ICON", "pixelOffset": {"cartesian2": [0.0, 16.0]}, "scale": 0.5, "show": true}, "path": {"show": true, "material": {"solidColor": {"color": {"rgba": [255, 0, 255, 125]}}}, "width": 2, "trailTime": 0, "resolution": 120, "leadTime": 0, "trailTime": 10000},  "billboard": {"image" : "../../SampleData/models/CesiumAir/ICON-2016-comp_fine.png", "scale": 30.0, "sizeInMeters": true, "show": true}, "position": {"interpolationDegree": 5, "referenceFrame": "INTERTIAL", "cartographicDegrees":"""
-end_format = '''], "interpolationAlgorithm": "LAGRANGE"}, "id": "ICON"}]'''
+formatting = """[{"version": "1.0", "id": "document"}, {"label": {"text": "ICON", "pixelOffset": {"cartesian2": [0.0, 16.0]}, "scale": 0.5, "show": true}, "path": {"show": true, "material": {"solidColor": {"color": {"rgba": [255, 0, 255, 125]}}}, "width": 2, "trailTime": 0, "resolution": 120, "leadTime": 0, "trailTime": 10000},  "billboard": {"image" : "../../SampleData/models/CesiumAir/Cesium-Air.gltf", "scale": 30.0, "sizeInMeters": true, "show": true}, "position": {"interpolationDegree": 5, "referenceFrame": "INTERTIAL", "cartographicDegrees":"""
+orient_format = '''], "interpolationAlgorithm": "LAGRANGE"},"orientation":{"interpolationAlgorithm":"LINEAR", "interpolationDegree":1, "unitQuaternion":'''
+final_format = ''' ,"id": "ICON"}]'''
 
 
 #writing to file
@@ -67,8 +83,10 @@ f = open('../Documents/Cesium/Apps/ICONData/czml/' + name +'.czml', 'w')
 f.write(formatting)
 for i in range(len(coords)):
 	f.write(coords[i][0:-1])
-f.write(end_format)
+f.write(orient_format)
+for i in range(len(orient)):
+	f.write(orient[i][0:-1])
+f.write(final_format)
 print('Data saved in ' + name + '.czml')
 f.close()
-
 
